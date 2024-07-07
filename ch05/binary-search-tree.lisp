@@ -31,6 +31,7 @@
 
 (in-package :binary-search-tree)
 
+; Root is its own parent???
 (defclass tree-node ()
   ((value :accessor value :initarg :value)
    (left :accessor left :initform nil)
@@ -77,7 +78,22 @@
   (labels ((traverse-left-branch (node)
              (if (null (left node))
                  node
-                 (traverse-left-branch (left node)))) )
+                 (traverse-left-branch (left node))))
+           (find-ancestor (node)
+             (with-slots (parent) node
+               (cond ((null parent) nil) ; Root
+                     ((eq node (left parent)) parent)
+                     (t (find-ancestor parent)))) ))
     (if (null (right node))
-        nil
+        (find-ancestor node)
         (traverse-left-branch (right node)))) )
+
+(defun remove-leaf (node)
+  (with-slots (left right parent) node
+    (assert (and (null left) (null right)) () "Node is not a leaf.")
+    (with-slots (left right) parent
+      (if (eq node left)
+          (setf left nil)
+          (setf right nil))
+      (setf parent nil)))
+  node)
