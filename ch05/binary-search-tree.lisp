@@ -225,7 +225,7 @@
                (unlink node)
                (decf count))
              (remove-double-child-node (node successor)
-               (remove-tree-node tree successor)
+               (remove-tree-node tree (value successor))
                (replace-node node successor)
                (with-slots (left right) node
                  (setf (left successor) left
