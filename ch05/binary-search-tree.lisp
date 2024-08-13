@@ -198,9 +198,9 @@
         (if (null node)
             (fail value)
             (with-slots (left right) node
-              (cond ((and (null left) (null right)) (remove-node node nil))
-                    ((or (null left) (null right)) (remove-node node (or left right)))
-                    (t (remove-double-child-node node (find-successor node)))) )))) ))
+              (if (or (null left) (null right))
+                  (remove-node node (or right left))
+                  (remove-double-child-node node (find-successor node)))) )))) )
 
 ;;;
 ;;;    Persistent BST may accommodate different notions of order, e.g., <, string<
