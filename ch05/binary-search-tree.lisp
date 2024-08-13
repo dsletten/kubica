@@ -252,34 +252,6 @@
                      :count (1+ count)
                      :test test))))
 
-;; (defmethod remove-tree-node ((tree persistent-binary-search-tree) (node persistent-tree-node))
-;;   (with-slots (root count test) tree
-;;     (labels ((fail (target)
-;;                (error "Target was not found in this tree: ~A" target))
-;;              (remove-node (node target child)
-;;                (cond ((null node) (fail target))
-;;                      ((funcall test (value target) (value node))
-;;                       (update-persistent-tree-node node :left (remove-node (left node) target child)))
-;;                      ((funcall test (value node) (value target))
-;;                       (update-persistent-tree-node node :right (remove-node (right node) target child)))
-;;                      (t child)))
-;;              (remove-double-child-node (node target successor)
-;;                (cond ((null node) (fail target))
-;;                      ((funcall test (value target) (value node))
-;;                       (update-persistent-tree-node node :left (remove-double-child-node (left node) target successor)))
-;;                      ((funcall test (value node) (value target))
-;;                       (update-persistent-tree-node node :right (remove-double-child-node (right node) target successor)))
-;;                      (t (update-persistent-tree-node successor :left (left node) :right (right node)))) ))
-;;     (if (null root)
-;;         (fail node)
-;;         (with-slots (left right) node
-;;           (let ((new-root (cond ((and (null left) (null right)) (remove-node root node nil))
-;;                                 ((or (null left) (null right)) (remove-node root node (or left right)))
-;;                                 (t (let* ((successor (find-successor node))
-;;                                           (new-tree (remove-tree-node tree successor)))
-;;                                      (remove-double-child-node (root new-tree) node successor)))) ))
-;;             (make-instance 'persistent-binary-search-tree :root new-root :count (1- count) :test test)))) )))
-
 ;;;
 ;;;    Persistent tree has to rebuild starting from the root down.
 ;;;    May as well locate the node to delete (by its value) along the way:
@@ -297,11 +269,11 @@
                      ((funcall test (value current) value)
                       (update-persistent-tree-node current :right (remove-node (right current) value)))
                      (t (with-slots (left right) current
-                          (cond ((and (null left) (null right)) nil)
-                                ((or (null left) (null right)) (or left right))
-                                (t (let* ((successor (find-successor current))
-                                          (new-node (remove-node current (value successor))))
-                                     (update-persistent-tree-node successor :left (left new-node) :right (right new-node)))) )))) ))
+                          (if (or (null left) (null right))
+                              (or right left)
+                              (let* ((successor (find-successor current))
+                                     (new-node (remove-node current (value successor))))
+                                (update-persistent-tree-node successor :left (left new-node) :right (right new-node)))) )))) )
     (if (null root)
         (fail value)
         (make-instance 'persistent-binary-search-tree :root (remove-node root value) :count (1- count) :test test)))) )
