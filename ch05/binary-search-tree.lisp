@@ -163,53 +163,9 @@
 ;;;
 ;;;    Kludge for decreasing COUNT!
 ;;;    REMOVE-DOUBLE-CHILD-NODE decreases when it removes the successor.
-;;;    The recursive call will be to REMOVE-LEAF-NODE/REMOVE-SINGLE-CHILD-NODE.
+;;;    This recursive call will be to REMOVE-NODE since successor has 0/1 child.
 ;;;    Don't need separate DECF.
 ;;;    
-;; (defmethod remove-tree-node ((tree mutable-binary-search-tree) (node tree-node))
-;;   (with-slots (root count) tree
-;;     (labels ((fail (target)
-;;                (error "Target was not found in this tree: ~A" target))
-;;              (remove-leaf-node ()
-;;                (if (null (parent node))
-;;                    (setf root nil)
-;;                    (with-slots (left right parent) node
-;;                      (assert (and (null left) (null right)) () "Node is not a leaf.")
-;;                      (update-child-link parent node nil)
-;;                      (setf parent nil)))
-;;                (decf count))
-;;              (remove-single-child-node (child)
-;;                (with-slots (parent) node
-;;                  (setf (parent child) parent)
-;;                  (if (null parent)
-;;                      (setf root child)
-;;                      (update-child-link parent node child)))
-;;                (unlink node)
-;;                (decf count))
-;;              (remove-double-child-node (successor)
-;;                (remove-tree-node tree successor)
-;;                (with-slots (left right parent) node
-;;                  (if (null parent)
-;;                      (setf root successor)
-;;                      (update-child-link parent node successor))
-;;                  (setf (parent successor) parent
-;;                        (left successor) left
-;;                        (parent left) successor
-;;                        (right successor) right)
-;;                  (unless (null right)
-;;                    (setf (parent right) successor)))
-;;                (unlink node))
-;;              (update-child-link (parent node child)
-;;                (if (eq node (left parent))
-;;                    (setf (left parent) child)
-;;                    (setf (right parent) child))))
-;;     (if (null root)
-;;         (fail node)
-;;         (with-slots (left right) node
-;;           (cond ((and (null left) (null right)) (remove-leaf-node))
-;;                 ((or (null left) (null right)) (remove-single-child-node (or left right)))
-;;                 (t (remove-double-child-node (find-successor node)))) )))) )
-
 (defmethod remove-tree-node ((tree mutable-binary-search-tree) value)
   (with-slots (root count) tree
     (labels ((fail (target)
@@ -238,15 +194,13 @@
                (if (eq node (left parent))
                    (setf (left parent) child)
                    (setf (right parent) child))))
-    (if (null root)
-        (fail value)
-        (let ((node (find-tree-node tree value)))
-          (if (null node)
-              (fail value)
-              (with-slots (left right) node
-                (cond ((and (null left) (null right)) (remove-node node nil))
-                      ((or (null left) (null right)) (remove-node node (or left right)))
-                      (t (remove-double-child-node node (find-successor node)))) )))) )))
+      (let ((node (find-tree-node tree value)))
+        (if (null node)
+            (fail value)
+            (with-slots (left right) node
+              (cond ((and (null left) (null right)) (remove-node node nil))
+                    ((or (null left) (null right)) (remove-node node (or left right)))
+                    (t (remove-double-child-node node (find-successor node)))) )))) ))
 
 ;;;
 ;;;    Persistent BST may accommodate different notions of order, e.g., <, string<
